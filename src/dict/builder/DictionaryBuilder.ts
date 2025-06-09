@@ -14,18 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-"use strict";
-
 import doublearray from "doublearray.ts";
-import DynamicDictionaries from "../DynamicDictionaries.js";
-import TokenInfoDictionary from "../TokenInfoDictionary.js";
-import ConnectionCostsBuilder from "./ConnectionCostsBuilder.js";
-import CharacterDefinitionBuilder from "./CharacterDefinitionBuilder.js";
-import UnknownDictionary from "../UnknownDictionary.js";
 import type { Key } from "doublearray.ts/dist/types";
+import type DoubleArray from "doublearray.ts/dist/doubleArrayClass.js";
+import { DynamicDictionaries } from "../DynamicDictionaries.js";
+import { TokenInfoDictionary } from "../TokenInfoDictionary.js";
+import { ConnectionCostsBuilder } from "./ConnectionCostsBuilder.js";
+import { CharacterDefinitionBuilder } from "./CharacterDefinitionBuilder.js";
+import { UnknownDictionary } from "../UnknownDictionary.js";
 
-class DictionaryBuilder {
+export class DictionaryBuilder {
   tid_entries: string[][];
   unk_entries: string[][];
   cc_builder: ConnectionCostsBuilder;
@@ -52,9 +50,8 @@ class DictionaryBuilder {
     this.cd_builder = new CharacterDefinitionBuilder();
   }
 
-  addTokenInfoDictionary(line: string) {
-    var new_entry = line.split(",");
-    this.tid_entries.push(new_entry);
+  addTokenInfoDictionary(line: string): this {
+    this.tid_entries.push(line.split(`,`));
     return this;
   }
 
@@ -62,12 +59,12 @@ class DictionaryBuilder {
    * Put one line of "matrix.def" file for building ConnectionCosts object
    * @param {string} line is a line of "matrix.def"
    */
-  putCostMatrixLine(line: string) {
+  putCostMatrixLine(line: string): this {
     this.cc_builder.putLine(line);
     return this;
   }
 
-  putCharDefLine(line: string) {
+  putCharDefLine(line: string): this {
     this.cd_builder.putLine(line);
     return this;
   }
@@ -76,14 +73,14 @@ class DictionaryBuilder {
    * Put one line of "unk.def" file for building UnknownDictionary object
    * @param {string} line is a line of "unk.def"
    */
-  putUnkDefLine(line: string) {
-    this.unk_entries.push(line.split(","));
+  putUnkDefLine(line: string): this {
+    this.unk_entries.push(line.split(`,`));
     return this;
   }
 
-  build() {
-    var dictionaries = this.buildTokenInfoDictionary();
-    var unknown_dictionary = this.buildUnknownDictionary();
+  build(): DynamicDictionaries {
+    const dictionaries = this.buildTokenInfoDictionary();
+    const unknown_dictionary = this.buildUnknownDictionary();
 
     return new DynamicDictionaries(
       dictionaries.trie,
@@ -98,57 +95,50 @@ class DictionaryBuilder {
    *
    * @returns {{trie: *, token_info_dictionary: *}}
    */
-  buildTokenInfoDictionary() {
-    var token_info_dictionary = new TokenInfoDictionary();
+  buildTokenInfoDictionary(): {
+    trie: DoubleArray;
+    token_info_dictionary: TokenInfoDictionary;
+  } {
+    const token_info_dictionary = new TokenInfoDictionary();
 
     // using as hashmap, string -> string (word_id -> surface_form) to build dictionary
-    var dictionary_entries = token_info_dictionary.buildDictionary(
+    const dictionary_entries = token_info_dictionary.buildDictionary(
       this.tid_entries
     );
 
-    var trie = this.buildDoubleArray();
+    const trie = this.buildDoubleArray();
 
-    for (let entry in dictionary_entries) {
-      let token_info_id = parseInt(entry);
-      var surface_form = dictionary_entries[token_info_id];
-      var trie_id = trie.lookup(surface_form.toString());
-
-      // Assertion
-      // if (trie_id < 0) {
-      //     console.log("Not Found:" + surface_form);
-      // }
-
-      token_info_dictionary.addMapping(trie_id, token_info_id);
+    for (const [token_info_id, surface_form] of Object.entries(
+      dictionary_entries
+    )) {
+      token_info_dictionary.addMapping(
+        trie.lookup(surface_form),
+        parseInt(token_info_id)
+      );
     }
 
     return {
       trie: trie,
-      token_info_dictionary: token_info_dictionary,
+      token_info_dictionary: token_info_dictionary
     };
   }
 
-  buildUnknownDictionary() {
-    var unk_dictionary = new UnknownDictionary();
+  buildUnknownDictionary(): UnknownDictionary {
+    const unk_dictionary = new UnknownDictionary();
 
     // using as hashmap, string -> string (word_id -> surface_form) to build dictionary
-    var dictionary_entries = unk_dictionary.buildDictionary(this.unk_entries);
+    const dictionary_entries = unk_dictionary.buildDictionary(this.unk_entries);
 
-    var char_def = this.cd_builder.build(); // Create CharacterDefinition
+    const char_def = this.cd_builder.build(); // Create CharacterDefinition
 
     unk_dictionary.characterDefinition(char_def);
 
-    for (let entry in dictionary_entries) {
-      const token_info_id = Number(entry);
-      var class_name = dictionary_entries[token_info_id];
-      var class_id = char_def.invoke_definition_map?.lookup(class_name);
-
-      // Assertion
-      // if (trie_id < 0) {
-      //     console.log("Not Found:" + surface_form);
-      // }
-
+    for (const [token_info_id, class_name] of Object.entries(
+      dictionary_entries
+    )) {
+      const class_id = char_def.invoke_definition_map?.lookup(class_name);
       if (class_id == null) continue;
-      unk_dictionary.addMapping(class_id, token_info_id);
+      unk_dictionary.addMapping(class_id, parseInt(token_info_id));
     }
 
     return unk_dictionary;
@@ -159,16 +149,12 @@ class DictionaryBuilder {
    *
    * @returns {DoubleArray} Double-Array trie
    */
-  buildDoubleArray() {
-    var trie_id = 0;
-    var words: Key[] = this.tid_entries.map((entry) => {
-      var surface_form = entry[0];
-      return { k: surface_form.toString(), v: trie_id++ };
-    });
-
-    var builder = doublearray.builder(1024 * 1024);
-    return builder.build(words);
+  buildDoubleArray(): DoubleArray {
+    let trie_id = 0;
+    const words: Key[] = this.tid_entries.map(([surface_form]) => ({
+      k: surface_form,
+      v: trie_id++
+    }));
+    return doublearray.builder(1024 * 1024).build(words);
   }
 }
-
-export default DictionaryBuilder;

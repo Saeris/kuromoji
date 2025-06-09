@@ -14,12 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ByteBuffer } from "../util/ByteBuffer.js";
 
-"use strict";
-
-import ByteBuffer from "../util/ByteBuffer.js";
-
-class TokenInfoDictionary {
+export class TokenInfoDictionary {
   dictionary: ByteBuffer;
   target_map: { [key: string]: number[] };
   pos_buffer: ByteBuffer;
@@ -39,25 +36,23 @@ class TokenInfoDictionary {
   buildDictionary(entries: string[][]): { [key: number]: string } {
     var dictionary_entries: { [key: number]: string } = {}; // using as hashmap, string -> string (word_id -> surface_form) to build dictionary
 
-    for (var i = 0; i < entries.length; i++) {
-      var entry = entries[i];
-
+    for (const entry of entries) {
       if (entry.length < 4) {
         continue;
       }
 
-      var surface_form = entry[0].toString();
-      var left_id = Number(entry[1]);
-      var right_id = Number(entry[2]);
-      var word_cost = Number(entry[3]);
-      var feature = entry.slice(4).join(","); // TODO Optimize
+      const surface_form = entry[0];
+      const left_id = Number(entry[1]);
+      const right_id = Number(entry[2]);
+      const word_cost = Number(entry[3]);
+      const feature = entry.slice(4).join(`,`); // TODO Optimize
 
       // Assertion
       if (!isFinite(left_id) || !isFinite(right_id) || !isFinite(word_cost)) {
         console.log(entry);
       }
 
-      var token_info_id = this.put(
+      let token_info_id = this.put(
         left_id,
         right_id,
         word_cost,
@@ -80,7 +75,7 @@ class TokenInfoDictionary {
     word_cost: number,
     surface_form: string,
     feature: string
-  ) {
+  ): number {
     var token_info_id = this.dictionary.position;
     var pos_id = this.pos_buffer.position;
 
@@ -88,22 +83,21 @@ class TokenInfoDictionary {
     this.dictionary.putShort(right_id);
     this.dictionary.putShort(word_cost);
     this.dictionary.putInt(pos_id);
-    this.pos_buffer.putString(surface_form + "," + feature);
+    this.pos_buffer.putString(surface_form + `,` + feature);
 
     return token_info_id;
   }
 
-  addMapping(source: number, target: number) {
-    const mapping = this.target_map[source] ?? [];
-    // if (mapping == null) {
-    //   mapping = [];
-    // }
+  addMapping(source: number, target: number): void {
+    const mapping = Object.hasOwn(this.target_map, source)
+      ? this.target_map[source]
+      : [];
     mapping.push(target);
 
     this.target_map[source] = mapping;
   }
 
-  targetMapToBuffer() {
+  targetMapToBuffer(): Uint8Array {
     var buffer = new ByteBuffer();
     var map_keys_size = Object.keys(this.target_map).length;
     buffer.putInt(map_keys_size);
@@ -112,27 +106,27 @@ class TokenInfoDictionary {
       var map_values_size = values.length;
       buffer.putInt(parseInt(key));
       buffer.putInt(map_values_size);
-      for (var i = 0; i < values.length; i++) {
-        buffer.putInt(values[i]);
+      for (const value of values) {
+        buffer.putInt(value);
       }
     }
     return buffer.shrink(); // Shrink-ed Typed Array
   }
 
   // from tid.dat
-  loadDictionary(array_buffer: Uint8Array) {
+  loadDictionary(array_buffer: Uint8Array): this {
     this.dictionary = new ByteBuffer(array_buffer);
     return this;
   }
 
   // from tid_pos.dat
-  loadPosVector(array_buffer: Uint8Array) {
+  loadPosVector(array_buffer: Uint8Array): this {
     this.pos_buffer = new ByteBuffer(array_buffer);
     return this;
   }
 
   // from tid_map.dat
-  loadTargetMap(array_buffer: Uint8Array) {
+  loadTargetMap(array_buffer: Uint8Array): this {
     const buffer = new ByteBuffer(array_buffer);
     buffer.position = 0;
     this.target_map = {};
@@ -156,15 +150,13 @@ class TokenInfoDictionary {
    * @param {string} token_info_id_str Word ID to look up
    * @returns {string} Features string concatenated by ","
    */
-  getFeatures(token_info_id_str: string) {
+  getFeatures(token_info_id_str: string): string {
     var token_info_id = parseInt(token_info_id_str);
     if (isNaN(token_info_id)) {
       // TODO throw error
-      return "";
+      return ``;
     }
     var pos_id = this.dictionary.getInt(token_info_id + 6);
     return this.pos_buffer.getString(pos_id);
   }
 }
-
-export default TokenInfoDictionary;

@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-"use strict";
-
-class SurrogateAwareString {
+export class SurrogateAwareString {
   str: string;
   index_mapping: number[];
   length: number;
@@ -31,8 +29,8 @@ class SurrogateAwareString {
     this.str = str;
     this.index_mapping = [];
 
-    for (var pos = 0; pos < str.length; pos++) {
-      var ch = str.charAt(pos);
+    for (let pos = 0; pos < str.length; pos++) {
+      const ch = str.charAt(pos);
       this.index_mapping.push(pos);
       if (SurrogateAwareString.isSurrogatePair(ch)) {
         pos++;
@@ -42,56 +40,56 @@ class SurrogateAwareString {
     this.length = this.index_mapping.length;
   }
 
-  slice(index: number) {
+  slice(index: number): string {
     if (this.index_mapping.length <= index) {
-      return "";
+      return ``;
     }
-    var surrogate_aware_index = this.index_mapping[index];
-    return this.str.slice(surrogate_aware_index);
+    return this.str.slice(this.index_mapping[index]);
   }
 
-  charAt(index: number) {
+  charAt(index: number): string {
     if (this.str.length <= index) {
-      return "";
+      return ``;
     }
-    var surrogate_aware_start_index = this.index_mapping[index];
-    var surrogate_aware_end_index = this.index_mapping[index + 1];
+    const surrogate_aware_start_index = this.index_mapping[index];
+    const surrogate_aware_end_index = this.index_mapping[index + 1];
 
     if (surrogate_aware_end_index == null) {
       return this.str.slice(surrogate_aware_start_index);
     }
     return this.str.slice(
       surrogate_aware_start_index,
-      surrogate_aware_end_index,
+      surrogate_aware_end_index
     );
   }
 
-  charCodeAt(index: number) {
+  charCodeAt(index: number): number {
     if (this.index_mapping.length <= index) {
       return NaN;
     }
-    var surrogate_aware_index = this.index_mapping[index];
-    var upper = this.str.charCodeAt(surrogate_aware_index);
-    var lower;
+    const surrogate_aware_index = this.index_mapping[index];
+    const upper = this.str.charCodeAt(surrogate_aware_index);
+    let lower: number;
     if (
-      upper >= 0xD800 && upper <= 0xDBFF &&
+      upper >= 0xd800 &&
+      upper <= 0xdbff &&
       surrogate_aware_index < this.str.length
     ) {
       lower = this.str.charCodeAt(surrogate_aware_index + 1);
-      if (lower >= 0xDC00 && lower <= 0xDFFF) {
-        return (upper - 0xD800) * 0x400 + lower - 0xDC00 + 0x10000;
+      if (lower >= 0xdc00 && lower <= 0xdfff) {
+        return (upper - 0xd800) * 0x400 + lower - 0xdc00 + 0x10000;
       }
     }
     return upper;
   }
 
-  toString() {
+  toString(): string {
     return this.str;
   }
 
-  static isSurrogatePair(ch: string) {
-    var utf16_code = ch.charCodeAt(0);
-    if (utf16_code >= 0xD800 && utf16_code <= 0xDBFF) {
+  static isSurrogatePair(ch: string): boolean {
+    const utf16_code = ch.charCodeAt(0);
+    if (utf16_code >= 0xd800 && utf16_code <= 0xdbff) {
       // surrogate pair
       return true;
     } else {
@@ -99,5 +97,3 @@ class SurrogateAwareString {
     }
   }
 }
-
-export default SurrogateAwareString;

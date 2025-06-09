@@ -81,8 +81,8 @@ const stringToUtf8Bytes = (str: string): Uint8Array | null => {
  * @param {Array} bytes UTF-8 byte sequence to convert
  * @return {String} String encoded by UTF-16
  */
-const utf8BytesToString = (bytes: any[]): string => {
-  let str = "";
+const utf8BytesToString = (bytes: number[]): string => {
+  let str = ``;
   let code, b1, b2, b3, b4, upper, lower;
   let i = 0;
 
@@ -127,7 +127,7 @@ const utf8BytesToString = (bytes: any[]): string => {
   return str;
 };
 
-class ByteBuffer {
+export class ByteBuffer {
   buffer: Uint8Array;
   position: number;
 
@@ -140,7 +140,7 @@ class ByteBuffer {
     let initial_size;
     if (arg == null) {
       initial_size = 1024 * 1024;
-    } else if (typeof arg === "number") {
+    } else if (typeof arg === `number`) {
       initial_size = arg;
     } else if (arg instanceof Uint8Array) {
       this.buffer = arg;
@@ -148,8 +148,8 @@ class ByteBuffer {
       return;
     } else {
       // typeof arg -> String
-      throw (
-        typeof arg + " is invalid parameter type for ByteBuffer constructor"
+      throw new Error(
+        typeof arg + ` is invalid parameter type for ByteBuffer constructor`
       );
     }
     // arg is null or number
@@ -157,29 +157,29 @@ class ByteBuffer {
     this.position = 0;
   }
 
-  size() {
+  size(): number {
     return this.buffer.length;
   }
 
-  reallocate() {
+  reallocate(): void {
     const new_array = new Uint8Array(this.buffer.length * 2);
     new_array.set(this.buffer);
     this.buffer = new_array;
   }
 
-  shrink() {
+  shrink(): Uint8Array {
     this.buffer = this.buffer.subarray(0, this.position);
     return this.buffer;
   }
 
-  put(b: number) {
+  put(b: number): void {
     if (this.buffer.length < this.position + 1) {
       this.reallocate();
     }
     this.buffer[this.position++] = b;
   }
 
-  get(index?: number) {
+  get(index?: number): number {
     if (index == null) {
       index = this.position;
       this.position += 1;
@@ -191,9 +191,9 @@ class ByteBuffer {
   }
 
   // Write short to buffer by little endian
-  putShort(num: number) {
+  putShort(num: number): void {
     if (0xffff < num) {
-      throw num + " is over short value";
+      throw new Error(num + ` is over short value`);
     }
     const lower = 0x00ff & num;
     const upper = (0xff00 & num) >> 8;
@@ -202,7 +202,7 @@ class ByteBuffer {
   }
 
   // Read short from buffer by little endian
-  getShort(index?: number) {
+  getShort(index?: number): number {
     if (index == null) {
       index = this.position;
       this.position += 2;
@@ -220,9 +220,9 @@ class ByteBuffer {
   }
 
   // Write integer to buffer by little endian
-  putInt(num: number) {
+  putInt(num: number): void {
     if (0xffffffff < num) {
-      throw num + " is over integer value";
+      throw new Error(num + ` is over integer value`);
     }
     const b0 = 0x000000ff & num;
     const b1 = (0x0000ff00 & num) >> 8;
@@ -235,7 +235,7 @@ class ByteBuffer {
   }
 
   // Read integer from buffer by little endian
-  getInt(index?: number) {
+  getInt(index?: number): number {
     if (index == null) {
       index = this.position;
       this.position += 4;
@@ -251,28 +251,25 @@ class ByteBuffer {
     return (b3 << 24) + (b2 << 16) + (b1 << 8) + b0;
   }
 
-  readInt() {
+  readInt(): number {
     const pos = this.position;
     this.position += 4;
     return this.getInt(pos);
   }
 
-  putString(str: string) {
+  putString(str: string): void {
     const bytes = stringToUtf8Bytes(str);
     if (bytes === null) return;
-    for (let i = 0; i < bytes.length; i++) {
-      this.put(bytes[i]);
+    for (const byte of bytes) {
+      this.put(byte);
     }
     // put null character as terminal character
     this.put(0);
   }
 
-  getString(index?: number) {
-    const buf = [];
-    let ch;
-    if (index == null) {
-      index = this.position;
-    }
+  getString(index: number = this.position): string {
+    const buf: number[] = [];
+    let ch: number;
     while (true) {
       if (this.buffer.length < index + 1) {
         break;
@@ -288,5 +285,3 @@ class ByteBuffer {
     return utf8BytesToString(buf);
   }
 }
-
-export default ByteBuffer;

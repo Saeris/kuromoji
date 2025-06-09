@@ -14,15 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import TokenInfoDictionary from "./TokenInfoDictionary.js";
-import ConnectionCosts from "./ConnectionCosts.js";
-import UnknownDictionary from "./UnknownDictionary.js";
 import doublearray from "doublearray.ts";
 import type DoubleArray from "doublearray.ts/dist/doubleArrayClass.js";
-import { ArrayBuffer } from "doublearray.ts/dist/types.js";
+import type { ArrayBuffer } from "doublearray.ts/dist/types.js";
+import { TokenInfoDictionary } from "./TokenInfoDictionary.js";
+import { ConnectionCosts } from "./ConnectionCosts.js";
+import { UnknownDictionary } from "./UnknownDictionary.js";
 
-class DynamicDictionaries {
+export class DynamicDictionaries {
   trie: DoubleArray;
   token_info_dictionary: TokenInfoDictionary;
   connection_costs: ConnectionCosts;
@@ -45,7 +44,12 @@ class DynamicDictionaries {
     if (trie != null) {
       this.trie = trie;
     } else {
-      this.trie = doublearray.builder(0).build([{ k: "", v: 1 }]);
+      this.trie = doublearray.builder(0).build([
+        {
+          k: ``,
+          v: 1
+        }
+      ]);
     }
     if (token_info_dictionary != null) {
       this.token_info_dictionary = token_info_dictionary;
@@ -66,7 +70,7 @@ class DynamicDictionaries {
   }
 
   // from base.dat & check.dat
-  loadTrie(base_buffer: ArrayBuffer, check_buffer: ArrayBuffer) {
+  loadTrie(base_buffer: ArrayBuffer, check_buffer: ArrayBuffer): this {
     this.trie = doublearray.load(base_buffer, check_buffer);
     return this;
   }
@@ -75,14 +79,14 @@ class DynamicDictionaries {
     token_info_buffer: Uint8Array,
     pos_buffer: Uint8Array,
     target_map_buffer: Uint8Array
-  ) {
+  ): this {
     this.token_info_dictionary.loadDictionary(token_info_buffer);
     this.token_info_dictionary.loadPosVector(pos_buffer);
     this.token_info_dictionary.loadTargetMap(target_map_buffer);
     return this;
   }
 
-  loadConnectionCosts(cc_buffer: Int16Array) {
+  loadConnectionCosts(cc_buffer: Int16Array): this {
     this.connection_costs.loadConnectionCosts(cc_buffer);
     return this;
   }
@@ -94,7 +98,7 @@ class DynamicDictionaries {
     cat_map_buffer: Uint8Array,
     compat_cat_map_buffer: Uint32Array,
     invoke_def_buffer: Uint8Array
-  ) {
+  ): this {
     this.unknown_dictionary.loadUnknownDictionaries(
       unk_buffer,
       unk_pos_buffer,
@@ -106,5 +110,3 @@ class DynamicDictionaries {
     return this;
   }
 }
-
-export default DynamicDictionaries;

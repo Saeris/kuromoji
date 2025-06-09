@@ -14,15 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-"use strict";
-
-import TokenInfoDictionary from "./TokenInfoDictionary.js";
-import CharacterDefinition from "./CharacterDefinition.js";
-import ByteBuffer from "../util/ByteBuffer.js";
+import { TokenInfoDictionary } from "./TokenInfoDictionary.js";
+import { CharacterDefinition } from "./CharacterDefinition.js";
+import { ByteBuffer } from "../util/ByteBuffer.js";
+import type { CharacterClass } from "./CharacterClass.js";
 
 // Inherit from TokenInfoDictionary as a super class
-class UnknownDictionary extends TokenInfoDictionary {
+export class UnknownDictionary extends TokenInfoDictionary {
   dictionary: ByteBuffer;
   target_map: { [key: string]: number[] };
   pos_buffer: ByteBuffer;
@@ -43,16 +41,16 @@ class UnknownDictionary extends TokenInfoDictionary {
   // Inherit from TokenInfoDictionary as a super class
   // UnknownDictionary.prototype = Object.create(TokenInfoDictionary.prototype);
 
-  characterDefinition(character_definition: CharacterDefinition) {
+  characterDefinition(character_definition: CharacterDefinition): this {
     this.character_definition = character_definition;
     return this;
   }
 
-  lookup(ch: string) {
+  lookup(ch: string): CharacterClass | undefined {
     return this.character_definition?.lookup(ch);
   }
 
-  lookupCompatibleCategory(ch: string) {
+  lookupCompatibleCategory(ch: string): CharacterClass[] | undefined {
     return this.character_definition?.lookupCompatibleCategory(ch);
   }
 
@@ -63,7 +61,7 @@ class UnknownDictionary extends TokenInfoDictionary {
     cat_map_buffer: Uint8Array,
     compat_cat_map_buffer: Uint32Array,
     invoke_def_buffer: Uint8Array
-  ) {
+  ): void {
     this.loadDictionary(unk_buffer);
     this.loadPosVector(unk_pos_buffer);
     this.loadTargetMap(unk_map_buffer);
@@ -74,5 +72,3 @@ class UnknownDictionary extends TokenInfoDictionary {
     );
   }
 }
-
-export default UnknownDictionary;

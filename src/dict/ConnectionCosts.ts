@@ -14,10 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-"use strict";
-
-class ConnectionCosts {
+export class ConnectionCosts {
   forward_dimension: number;
   backward_dimension: number;
   buffer: Int16Array;
@@ -39,27 +36,25 @@ class ConnectionCosts {
     this.buffer[1] = backward_dimension;
   }
 
-  put(forward_id: number, backward_id: number, cost: number) {
+  put(forward_id: number, backward_id: number, cost: number): void {
     const index = forward_id * this.backward_dimension + backward_id + 2;
     if (this.buffer.length < index + 1) {
-      throw "ConnectionCosts buffer overflow";
+      throw new Error(`ConnectionCosts buffer overflow`);
     }
     this.buffer[index] = cost;
   }
 
-  get(forward_id: number, backward_id: number) {
+  get(forward_id: number, backward_id: number): number {
     const index = forward_id * this.backward_dimension + backward_id + 2;
     if (this.buffer.length < index + 1) {
-      throw "ConnectionCosts buffer overflow";
+      throw new Error(`ConnectionCosts buffer overflow`);
     }
     return this.buffer[index];
   }
 
-  loadConnectionCosts(connection_costs_buffer: Int16Array) {
+  loadConnectionCosts(connection_costs_buffer: Int16Array): void {
     this.forward_dimension = connection_costs_buffer[0];
     this.backward_dimension = connection_costs_buffer[1];
     this.buffer = connection_costs_buffer;
   }
 }
-
-export default ConnectionCosts;

@@ -1,87 +1,36 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import IPADic from "mecab-ipadic-seed";
-import kuromoji from "../../kuromoji.js";
-import DictionaryBuilder from "./DictionaryBuilder.js";
+import { DictionaryBuilder } from "./DictionaryBuilder.js";
 import { pathJoin } from "../../util/PathJoin.js";
 
-const outDir = "dict-uncompressed/";
+const outDir = `dict-uncompressed/`;
 
-const createDatFiles = async () => {
-  if (!existsSync(outDir)) {
-    mkdirSync(outDir);
-  }
-
-  const dic = new IPADic();
-  const builder = kuromoji.dictionaryBuilder();
-
-  // Build token info dictionary
-  const tokenInfo = async () => {
-    await dic.readTokenInfo((line) => {
-      builder.addTokenInfoDictionary(line);
-    });
-    console.log("Finishied to read token info dics");
-  };
-
-  // Build connection costs matrix
-  const matrixDef = async () => {
-    await dic.readMatrixDef((line) => {
-      builder.putCostMatrixLine(line);
-    });
-    console.log("Finishied to read matrix.def");
-  };
-
-  // Build unknown dictionary
-  const unkDef = async () => {
-    await dic.readUnkDef((line) => {
-      builder.putUnkDefLine(line);
-    });
-    console.log("Finishied to read unk.def");
-  };
-
-  // Build character definition dictionary
-  const charDef = async () => {
-    await dic.readCharDef((line) => {
-      builder.putCharDefLine(line);
-    });
-    console.log("Finishied to read char.def");
-  };
-
-  await buildBinaryDictionaries(
-    [tokenInfo(), matrixDef(), unkDef(), charDef()],
-    builder
-  );
-};
-
-/**
- * To node.js Buffer
- * @param typed
- * @returns
- */
 const toBuffer = (
-  typed?: ArrayBuffer | Uint8Array | Int16Array | Uint32Array
+  typed?:
+    | ArrayBuffer
+    | Int8Array
+    | Int16Array
+    | Int32Array
+    | Uint8Array
+    | Uint16Array
+    | Uint32Array
 ): Buffer => {
-  if (!typed) {
+  if (typeof typed === `undefined`) {
     return Buffer.alloc(0);
   }
-  // よくわからないのでエラーを握りつぶした
-  // @ts-ignore
-  var ab = typed.buffer;
-  var buffer = new Buffer(ab.byteLength);
-  var view = new Uint8Array(ab);
-  for (var i = 0; i < buffer.length; ++i) {
-    buffer[i] = view[i];
-  }
-  return buffer;
+  return typed instanceof ArrayBuffer
+    ? Buffer.from(typed)
+    : Buffer.from(typed.buffer);
 };
 
 const buildBinaryDictionaries = async (
-  promises: Promise<void>[],
+  promises: Array<Promise<void>>,
   builder: DictionaryBuilder
-) => {
+): Promise<void> => {
   // Build kuromoji.js binary dictionary
   await Promise.all(promises);
-  console.log("Finishied to read all seed dictionary files");
-  console.log("Building binary dictionary ...");
+  console.log(`Finishied to read all seed dictionary files`);
+  console.log(`Building binary dictionary ...`);
   const dic = builder.build();
 
   const base_buffer = toBuffer(dic.trie.bc.getBaseBuffer());
@@ -107,20 +56,66 @@ const buildBinaryDictionaries = async (
     dic.unknown_dictionary.character_definition?.invoke_definition_map?.toBuffer()
   );
 
-  writeFileSync(pathJoin([outDir, "base.dat"]), base_buffer);
-  writeFileSync(pathJoin([outDir, "check.dat"]), check_buffer);
-  writeFileSync(pathJoin([outDir, "tid.dat"]), token_info_buffer);
-  writeFileSync(pathJoin([outDir, "tid_pos.dat"]), tid_pos_buffer);
-  writeFileSync(pathJoin([outDir, "tid_map.dat"]), tid_map_buffer);
-  writeFileSync(pathJoin([outDir, "cc.dat"]), connection_costs_buffer);
-  writeFileSync(pathJoin([outDir, "unk.dat"]), unk_buffer);
-  writeFileSync(pathJoin([outDir, "unk_pos.dat"]), unk_pos_buffer);
-  writeFileSync(pathJoin([outDir, "unk_map.dat"]), unk_map_buffer);
-  writeFileSync(pathJoin([outDir, "unk_char.dat"]), char_map_buffer);
-  writeFileSync(pathJoin([outDir, "unk_compat.dat"]), char_compat_map_buffer);
+  writeFileSync(pathJoin([outDir, `base.dat`]), base_buffer);
+  writeFileSync(pathJoin([outDir, `check.dat`]), check_buffer);
+  writeFileSync(pathJoin([outDir, `tid.dat`]), token_info_buffer);
+  writeFileSync(pathJoin([outDir, `tid_pos.dat`]), tid_pos_buffer);
+  writeFileSync(pathJoin([outDir, `tid_map.dat`]), tid_map_buffer);
+  writeFileSync(pathJoin([outDir, `cc.dat`]), connection_costs_buffer);
+  writeFileSync(pathJoin([outDir, `unk.dat`]), unk_buffer);
+  writeFileSync(pathJoin([outDir, `unk_pos.dat`]), unk_pos_buffer);
+  writeFileSync(pathJoin([outDir, `unk_map.dat`]), unk_map_buffer);
+  writeFileSync(pathJoin([outDir, `unk_char.dat`]), char_map_buffer);
+  writeFileSync(pathJoin([outDir, `unk_compat.dat`]), char_compat_map_buffer);
   writeFileSync(
-    pathJoin([outDir, "unk_invoke.dat"]),
+    pathJoin([outDir, `unk_invoke.dat`]),
     invoke_definition_map_buffer
+  );
+};
+
+const createDatFiles = async (): Promise<void> => {
+  if (!existsSync(outDir)) {
+    mkdirSync(outDir);
+  }
+
+  const dic = new IPADic();
+  const builder = new DictionaryBuilder();
+
+  // Build token info dictionary
+  const tokenInfo = async (): Promise<void> => {
+    await dic.readTokenInfo((line) => {
+      builder.addTokenInfoDictionary(line);
+    });
+    console.log(`Finishied to read token info dics`);
+  };
+
+  // Build connection costs matrix
+  const matrixDef = async (): Promise<void> => {
+    await dic.readMatrixDef((line) => {
+      builder.putCostMatrixLine(line);
+    });
+    console.log(`Finishied to read matrix.def`);
+  };
+
+  // Build unknown dictionary
+  const unkDef = async (): Promise<void> => {
+    await dic.readUnkDef((line) => {
+      builder.putUnkDefLine(line);
+    });
+    console.log(`Finishied to read unk.def`);
+  };
+
+  // Build character definition dictionary
+  const charDef = async (): Promise<void> => {
+    await dic.readCharDef((line) => {
+      builder.putCharDefLine(line);
+    });
+    console.log(`Finishied to read char.def`);
+  };
+
+  await buildBinaryDictionaries(
+    [tokenInfo(), matrixDef(), unkDef(), charDef()],
+    builder
   );
 };
 

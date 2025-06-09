@@ -14,18 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import type DoubleArray from "doublearray.ts/dist/doubleArrayClass.js";
+import { ViterbiNode } from "./ViterbiNode.js";
+import { ViterbiLattice } from "./ViterbiLattice.js";
+import { SurrogateAwareString } from "../util/SurrogateAwareString.js";
+import type { DynamicDictionaries } from "../dict/DynamicDictionaries.js";
+import type { TokenInfoDictionary } from "../dict/TokenInfoDictionary.js";
+import type { UnknownDictionary } from "../dict/UnknownDictionary.js";
 
-"use strict";
-
-import ViterbiNode from "./ViterbiNode.js";
-import ViterbiLattice from "./ViterbiLattice.js";
-import SurrogateAwareString from "../util/SurrogateAwareString.js";
-import DynamicDictionaries from "../dict/DynamicDictionaries.js";
-import DoubleArray from "doublearray.ts/dist/doubleArrayClass.js";
-import TokenInfoDictionary from "../dict/TokenInfoDictionary.js";
-import UnknownDictionary from "../dict/UnknownDictionary.js";
-
-class ViterbiBuilder {
+export class ViterbiBuilder {
   trie: DoubleArray;
   token_info_dictionary: TokenInfoDictionary;
   unknown_dictionary: UnknownDictionary;
@@ -57,18 +54,18 @@ class ViterbiBuilder {
     for (let pos = 0; pos < sentence.length; pos++) {
       const tail = sentence.slice(pos);
       const vocabulary = this.trie.commonPrefixSearch(tail);
-      for (let n = 0; n < vocabulary.length; n++) {
+      for (const { v, k } of vocabulary) {
         // Words in dictionary do not have surrogate pair (only UCS2 set)
-        trie_id = vocabulary[n].v;
-        let key = vocabulary[n].k;
+        trie_id = v;
+        let key = k;
         if (key === null || key === undefined) continue;
 
         if (trie_id == null) continue;
 
         const token_info_ids = this.token_info_dictionary.target_map[trie_id];
-        for (let i = 0; i < token_info_ids.length; i++) {
+        for (const id of token_info_ids) {
           // FIXME parseInt要らない説
-          const token_info_id = parseInt(token_info_ids[i].toString());
+          const token_info_id = parseInt(id.toString());
 
           left_id =
             this.token_info_dictionary.dictionary.getShort(token_info_id);
@@ -86,7 +83,7 @@ class ViterbiBuilder {
               word_cost,
               pos + 1,
               key.length,
-              "KNOWN",
+              `KNOWN`,
               left_id,
               right_id,
               key
@@ -104,11 +101,7 @@ class ViterbiBuilder {
         head_char.toString()
       );
       if (head_char_class === undefined) continue;
-      if (
-        vocabulary == null ||
-        vocabulary.length === 0 ||
-        head_char_class.is_always_invoke === 1
-      ) {
+      if (vocabulary.length === 0 || head_char_class.is_always_invoke === 1) {
         // Process unknown word
         let key: SurrogateAwareString | string = head_char;
         if (
@@ -127,9 +120,9 @@ class ViterbiBuilder {
 
         const unk_ids =
           this.unknown_dictionary.target_map[head_char_class.class_id];
-        for (let j = 0; j < unk_ids.length; j++) {
+        for (const id of unk_ids) {
           // FIXME parseInt要らない説
-          const unk_id = parseInt(unk_ids[j].toString());
+          const unk_id = parseInt(id.toString());
 
           left_id = this.unknown_dictionary.dictionary.getShort(unk_id);
           right_id = this.unknown_dictionary.dictionary.getShort(unk_id + 2);
@@ -142,7 +135,7 @@ class ViterbiBuilder {
               word_cost,
               pos + 1,
               key.length,
-              "UNKNOWN",
+              `UNKNOWN`,
               left_id,
               right_id,
               key.toString()
@@ -156,5 +149,3 @@ class ViterbiBuilder {
     return lattice;
   }
 }
-
-export default ViterbiBuilder;

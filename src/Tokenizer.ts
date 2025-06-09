@@ -14,25 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import ViterbiBuilder from "./viterbi/ViterbiBuilder.js";
-import ViterbiSearcher from "./viterbi/ViterbiSearcher.js";
-import IpadicFormatter from "./util/IpadicFormatter.js";
-import { IpadicFormatterToken } from "./util/IpadicFormatter.js";
-import DynamicDictionaries from "./dict/DynamicDictionaries.js";
-import ViterbiLattice from "./viterbi/ViterbiLattice.js";
+import { ViterbiBuilder } from "./viterbi/ViterbiBuilder.js";
+import { ViterbiSearcher } from "./viterbi/ViterbiSearcher.js";
+import {
+  formatEntry,
+  formatUnknownEntry,
+  type IpadicFormatterToken
+} from "./util/IpadicFormatter.js";
+import type { DynamicDictionaries } from "./dict/DynamicDictionaries.js";
+import type { ViterbiLattice } from "./viterbi/ViterbiLattice.js";
 
 /**
  * 読点と句読点。
  */
 const PUNCTUATION = /、|。/;
 
-class Tokenizer {
+export class Tokenizer {
   token_info_dictionary;
   unknown_dictionary;
   viterbi_builder;
   viterbi_searcher;
-  formatter;
 
   /**
    * Tokenizer
@@ -44,7 +45,6 @@ class Tokenizer {
     this.unknown_dictionary = dic.unknown_dictionary;
     this.viterbi_builder = new ViterbiBuilder(dic);
     this.viterbi_searcher = new ViterbiSearcher(dic.connection_costs);
-    this.formatter = new IpadicFormatter(); // TODO Other dictionaries
   }
 
   /**
@@ -53,10 +53,10 @@ class Tokenizer {
    * @returns {Array.<string>} Sentences end with punctuation
    */
   static splitByPunctuation(input: string): string[] {
-    const sentences = [];
+    const sentences: string[] = [];
     let tail = input;
     while (true) {
-      if (tail === "") {
+      if (tail === ``) {
         break;
       }
       const index = tail.search(PUNCTUATION);
@@ -75,7 +75,7 @@ class Tokenizer {
    * @param {string} text Input text to analyze
    * @returns {Array} Tokens
    */
-  tokenize(text: string) {
+  tokenize(text: string): IpadicFormatterToken[] {
     const sentences = Tokenizer.splitByPunctuation(text);
     const tokens: IpadicFormatterToken[] = [];
     for (const sentence of sentences) {
@@ -86,11 +86,8 @@ class Tokenizer {
 
   tokenizeForSentence(
     sentence: string,
-    tokens?: IpadicFormatterToken[]
+    tokens: IpadicFormatterToken[] = []
   ): IpadicFormatterToken[] {
-    if (tokens === undefined) {
-      tokens = [];
-    }
     const lattice = this.getLattice(sentence);
     const best_path = this.viterbi_searcher.search(lattice);
     let last_pos = 0;
@@ -101,35 +98,35 @@ class Tokenizer {
     const result: IpadicFormatterToken[] = [];
 
     for (const node of best_path) {
-      let token: IpadicFormatterToken,
-        features: string[],
-        features_line: string;
-      if (node.type === "KNOWN") {
+      let token: IpadicFormatterToken;
+      let features: string[];
+      let features_line: string;
+      if (node.type === `KNOWN`) {
         features_line = this.token_info_dictionary.getFeatures(
           node.name.toString()
         );
-        if (features_line == null) {
+        if (typeof features_line !== `string`) {
           features = [];
         } else {
-          features = features_line.split(",");
+          features = features_line.split(`,`);
         }
-        token = this.formatter.formatEntry(
+        token = formatEntry(
           node.name,
           last_pos + node.start_pos,
           node.type,
           features
         );
-      } else if (node.type === "UNKNOWN") {
+      } else if (node.type === `UNKNOWN`) {
         // Unknown word
         features_line = this.unknown_dictionary.getFeatures(
           node.name.toString()
         );
-        if (features_line == null) {
+        if (typeof features_line !== `string`) {
           features = [];
         } else {
-          features = features_line.split(",");
+          features = features_line.split(`,`);
         }
-        token = this.formatter.formatUnknownEntry(
+        token = formatUnknownEntry(
           node.name,
           last_pos + node.start_pos,
           node.type,
@@ -138,7 +135,7 @@ class Tokenizer {
         );
       } else {
         // TODO User dictionary
-        token = this.formatter.formatEntry(
+        token = formatEntry(
           node.name,
           last_pos + node.start_pos,
           node.type,
@@ -161,5 +158,3 @@ class Tokenizer {
     return this.viterbi_builder.build(text);
   }
 }
-
-export default Tokenizer;

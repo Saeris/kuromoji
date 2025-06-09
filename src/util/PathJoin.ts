@@ -1,12 +1,12 @@
-export const pathJoin = (pathes: string[]) => {
-  let result: string = "";
+export const pathJoin = (pathes: string[]): string => {
+  let result = ``;
   for (const path of pathes) {
-    if (path.startsWith("/") && result.endsWith("/")) {
+    if (path.startsWith(`/`) && result.endsWith(`/`)) {
       result += path.slice(1);
-    } else if (path.startsWith("/") || result.endsWith("/") || result == "") {
+    } else if (path.startsWith(`/`) || result.endsWith(`/`) || result == ``) {
       result += path;
     } else {
-      result += "/" + path;
+      result += `/` + path;
     }
   }
   return result;

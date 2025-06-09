@@ -1,18 +1,9 @@
-import { defineConfig, mergeConfig } from "vitest/config";
-import viteConfig from "./vite.config";
+import { defineConfig } from "vitest/config";
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      include: ["test/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-      environment: "jsdom",
-      coverage: {
-        enabled: true,
-        provider: "istanbul",
-        exclude: ["demo/**", "dist/**", "dist-demo/**"],
-        reporter: ["text", "html", "json", "json-summary"],
-      },
-    },
-  })
-);
+export default defineConfig({
+  test: {
+    name: `kuromoji`,
+    globals: true,
+    watch: false
+  }
+});

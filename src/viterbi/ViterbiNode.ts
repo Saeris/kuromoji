@@ -14,12 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export type ViterbiNodeType = `KNOWN` | `UNKNOWN` | `BOS` | `EOS`;
 
-"use strict";
-
-export type ViterbiNodeType = "KNOWN" | "UNKNOWN" | "BOS" | "EOS";
-
-class ViterbiNode {
+export class ViterbiNode {
   name: number;
   cost: number;
   start_pos: number;
@@ -61,7 +58,7 @@ class ViterbiNode {
     this.right_id = right_id;
     this.prev = null;
     this.surface_form = surface_form;
-    if (type === "BOS") {
+    if (type === `BOS`) {
       this.shortest_cost = 0;
     } else {
       this.shortest_cost = Number.MAX_VALUE;
@@ -69,5 +66,3 @@ class ViterbiNode {
     this.type = type;
   }
 }
-
-export default ViterbiNode;

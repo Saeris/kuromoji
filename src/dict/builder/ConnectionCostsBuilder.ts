@@ -14,12 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ConnectionCosts } from "../ConnectionCosts.js";
 
-"use strict";
-
-import ConnectionCosts from "../ConnectionCosts.js";
-
-class ConnectionCostsBuilder {
+export class ConnectionCostsBuilder {
   lines: number;
   connection_cost: ConnectionCosts | null;
 
@@ -32,14 +29,14 @@ class ConnectionCostsBuilder {
     this.connection_cost = null;
   }
 
-  putLine(line: string) {
+  putLine(line: string): void {
     if (this.lines === 0 || this.connection_cost === null) {
-      var dimensions = line.split(" ");
+      var dimensions = line.split(` `);
       var forward_dimension = parseInt(dimensions[0]);
       var backward_dimension = parseInt(dimensions[1]);
 
       if (forward_dimension < 0 || backward_dimension < 0) {
-        throw "Parse error of matrix.def";
+        throw new Error(`Parse error of matrix.def`);
       }
 
       this.connection_cost = new ConnectionCosts(
@@ -50,7 +47,7 @@ class ConnectionCostsBuilder {
       return;
     }
 
-    var costs = line.split(" ");
+    var costs = line.split(` `);
 
     if (costs.length !== 3) {
       return;
@@ -68,16 +65,14 @@ class ConnectionCostsBuilder {
       this.connection_cost.forward_dimension <= forward_id ||
       this.connection_cost.backward_dimension <= backward_id
     ) {
-      throw "Parse error of matrix.def";
+      throw new Error(`Parse error of matrix.def`);
     }
 
     this.connection_cost.put(forward_id, backward_id, cost);
     this.lines++;
   }
 
-  build() {
+  build(): ConnectionCosts | null {
     return this.connection_cost;
   }
 }
-
-export default ConnectionCostsBuilder;

@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import type { ConnectionCosts } from "../dict/ConnectionCosts.js";
+import type { ViterbiLattice } from "./ViterbiLattice.js";
+import type { ViterbiNode } from "./ViterbiNode.js";
 
-import ConnectionCosts from "../dict/ConnectionCosts.js";
-import ViterbiLattice from "./ViterbiLattice.js";
-import ViterbiNode from "./ViterbiNode.js";
-
-class ViterbiSearcher {
+export class ViterbiSearcher {
   connection_costs: ConnectionCosts;
 
   /**
@@ -36,15 +35,15 @@ class ViterbiSearcher {
    * @param {ViterbiLattice} lattice Viterbi lattice to search
    * @returns {Array} Shortest path
    */
-  search(lattice: ViterbiLattice) {
+  search(lattice: ViterbiLattice): ViterbiNode[] {
     lattice = this.forward(lattice);
     return this.backward(lattice);
   }
 
-  forward(lattice: ViterbiLattice) {
+  forward(lattice: ViterbiLattice): ViterbiLattice {
     for (let i = 1; i <= lattice.eos_pos; i++) {
       const nodes = lattice.nodes_end_at[i];
-      if (nodes === undefined) {
+      if (!Array.isArray(nodes)) {
         continue;
       }
       for (const node of nodes) {
@@ -58,10 +57,10 @@ class ViterbiSearcher {
         }
         const prev_nodes = lattice.nodes_end_at[index];
         for (const prev_node of prev_nodes) {
-          let edge_cost;
+          let edge_cost: number;
           if (node.left_id == null || prev_node.right_id == null) {
             // TODO assert
-            console.log("Left or right is null");
+            console.log(`Left or right is null`);
             edge_cost = 0;
           } else {
             edge_cost = this.connection_costs.get(
@@ -85,14 +84,14 @@ class ViterbiSearcher {
   }
 
   backward(lattice: ViterbiLattice): ViterbiNode[] {
-    const shortest_path = [];
+    const shortest_path: ViterbiNode[] = [];
     const eos = lattice.nodes_end_at[lattice.nodes_end_at.length - 1][0];
 
     let node_back = eos.prev;
     if (node_back == null) {
       return [];
     }
-    while (node_back.type !== "BOS") {
+    while (node_back.type !== `BOS`) {
       shortest_path.push(node_back);
       if (node_back.prev == null) {
         // TODO Failed to back. Process unknown words?
@@ -104,5 +103,3 @@ class ViterbiSearcher {
     return shortest_path.reverse();
   }
 }
-
-export default ViterbiSearcher;

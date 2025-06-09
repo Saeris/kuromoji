@@ -14,10 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-"use strict";
-
-class CharacterClass {
+export class CharacterClass {
   class_id: number;
   class_name: string;
   is_always_invoke: boolean | number;
@@ -38,7 +35,7 @@ class CharacterClass {
     class_name: string,
     is_always_invoke: boolean | number,
     is_grouping: boolean | number,
-    max_length: number,
+    max_length: number
   ) {
     this.class_id = class_id;
     this.class_name = class_name;
@@ -47,5 +44,3 @@ class CharacterClass {
     this.max_length = max_length;
   }
 }
-
-export default CharacterClass;

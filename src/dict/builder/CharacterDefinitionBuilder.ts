@@ -14,12 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-"use strict";
-
-import CharacterClass from "../CharacterClass.js";
-import CharacterDefinition from "../CharacterDefinition.js";
-import InvokeDefinitionMap from "../InvokeDefinitionMap.js";
+import type { CategoryMapping } from "../../types.js";
+import type { CharacterClass } from "../CharacterClass.js";
+import { CharacterDefinition } from "../CharacterDefinition.js";
+import { InvokeDefinitionMap } from "../InvokeDefinitionMap.js";
 
 const CATEGORY_DEF_PATTERN = /^(\w+)\s+(\d)\s+(\d)\s+(\d)/;
 const CATEGORY_MAPPING_PATTERN =
@@ -27,7 +25,7 @@ const CATEGORY_MAPPING_PATTERN =
 const RANGE_CATEGORY_MAPPING_PATTERN =
   /^(0x[0-9A-F]{4})\.\.(0x[0-9A-F]{4})(?:\s+([^#\s]+))(?:\s+([^#\s]+))*/;
 
-class CharacterDefinitionBuilder {
+export class CharacterDefinitionBuilder {
   char_def: CharacterDefinition;
   character_category_definition: CharacterClass[];
   category_mapping: CategoryMapping[];
@@ -75,7 +73,6 @@ class CharacterDefinitionBuilder {
   }
 
   build(): CharacterDefinition {
-    // TODO If DEFAULT category does not exist, throw error
     this.char_def.invoke_definition_map?.init(
       this.character_category_definition
     );
@@ -83,5 +80,3 @@ class CharacterDefinitionBuilder {
     return this.char_def;
   }
 }
-
-export default CharacterDefinitionBuilder;

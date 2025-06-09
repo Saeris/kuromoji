@@ -14,10 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-"use strict";
-
-import { ViterbiNodeType } from "../viterbi/ViterbiNode.js";
+import type { ViterbiNodeType } from "../viterbi/ViterbiNode.js";
 
 export interface IpadicFormatterToken {
   /** 辞書内での単語ID */
@@ -48,64 +45,54 @@ export interface IpadicFormatterToken {
   pronunciation?: string;
 }
 
-class IpadicFormatter {
-  /**
-   * Mappings between IPADIC dictionary features and tokenized results
-   * @constructor
-   */
-  constructor() {}
+/**
+ * Mappings between IPADIC dictionary features and tokenized results
+ */
+export const formatEntry = (
+  word_id: number,
+  position: number,
+  type: ViterbiNodeType,
+  features: string[]
+): IpadicFormatterToken => {
+  return {
+    word_id,
+    word_type: type,
+    word_position: position,
 
-  formatEntry(
-    word_id: number,
-    position: number,
-    type: ViterbiNodeType,
-    features: string[]
-  ): IpadicFormatterToken {
-    let token: IpadicFormatterToken = {
-      word_id,
-      word_type: type,
-      word_position: position,
+    surface_form: features[0],
+    pos: features[1],
+    pos_detail_1: features[2],
+    pos_detail_2: features[3],
+    pos_detail_3: features[4],
+    conjugated_type: features[5],
+    conjugated_form: features[6],
+    basic_form: features[7],
+    reading: features[8],
+    pronunciation: features[9].trim()
+  };
+};
 
-      surface_form: features[0],
-      pos: features[1],
-      pos_detail_1: features[2],
-      pos_detail_2: features[3],
-      pos_detail_3: features[4],
-      conjugated_type: features[5],
-      conjugated_form: features[6],
-      basic_form: features[7],
-      reading: features[8],
-      pronunciation: features[9],
-    };
+export const formatUnknownEntry = (
+  word_id: number,
+  position: number,
+  type: ViterbiNodeType,
+  features: string[],
+  surface_form: string | Uint8Array
+): IpadicFormatterToken => {
+  return {
+    word_id,
+    word_type: type,
+    word_position: position,
 
-    return token;
-  }
-
-  formatUnknownEntry(
-    word_id: number,
-    position: number,
-    type: ViterbiNodeType,
-    features: string[],
-    surface_form: string | Uint8Array
-  ): IpadicFormatterToken {
-    let token: IpadicFormatterToken = {
-      word_id,
-      word_type: type,
-      word_position: position,
-
-      surface_form: surface_form,
-      pos: features[1],
-      pos_detail_1: features[2],
-      pos_detail_2: features[3],
-      pos_detail_3: features[4],
-      conjugated_type: features[5],
-      conjugated_form: features[6],
-      basic_form: features[7],
-      // reading: features[8],
-      // pronunciation: features[9],
-    };
-    return token;
-  }
-}
-
-export default IpadicFormatter;
+    surface_form: surface_form,
+    pos: features[1],
+    pos_detail_1: features[2],
+    pos_detail_2: features[3],
+    pos_detail_3: features[4],
+    conjugated_type: features[5],
+    conjugated_form: features[6],
+    basic_form: features[7]
+    // reading: features[8],
+    // pronunciation: features[9],
+  };
+};

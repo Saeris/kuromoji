@@ -14,13 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ByteBuffer } from "../util/ByteBuffer.js";
+import { CharacterClass } from "./CharacterClass.js";
 
-"use strict";
-
-import ByteBuffer from "../util/ByteBuffer.js";
-import CharacterClass from "./CharacterClass.js";
-
-class InvokeDefinitionMap {
+export class InvokeDefinitionMap {
   map: CharacterClass[];
   lookup_table: { [key: string]: number };
 
@@ -38,9 +35,9 @@ class InvokeDefinitionMap {
    * @param {Uint8Array} invoke_def_buffer
    * @returns {InvokeDefinitionMap}
    */
-  static load(invoke_def_buffer: Uint8Array) {
+  static load(invoke_def_buffer: Uint8Array): InvokeDefinitionMap {
     var invoke_def = new InvokeDefinitionMap();
-    var character_category_definition = [];
+    var character_category_definition: CharacterClass[] = [];
 
     var buffer = new ByteBuffer(invoke_def_buffer);
     while (buffer.position + 1 < buffer.size()) {
@@ -69,8 +66,8 @@ class InvokeDefinitionMap {
    * Initializing method
    * @param {Array.<CharacterClass>} character_category_definition Array of CharacterClass
    */
-  init(character_category_definition: CharacterClass[]) {
-    if (character_category_definition == null) {
+  init(character_category_definition: CharacterClass[]): void {
+    if (!Array.isArray(character_category_definition)) {
       return;
     }
     for (var i = 0; i < character_category_definition.length; i++) {
@@ -95,11 +92,9 @@ class InvokeDefinitionMap {
    * @returns {number} class_id
    */
   lookup(class_name: string): number | null {
-    const class_id = this.lookup_table[class_name];
-    if (class_id == null) {
-      return null;
-    }
-    return class_id;
+    return Object.hasOwn(this.lookup_table, class_name)
+      ? this.lookup_table[class_name]
+      : null;
   }
 
   /**
@@ -108,8 +103,7 @@ class InvokeDefinitionMap {
    */
   toBuffer(): Uint8Array {
     var buffer = new ByteBuffer();
-    for (var i = 0; i < this.map.length; i++) {
-      var char_class = this.map[i];
+    for (const char_class of this.map) {
       buffer.put(Number(char_class.is_always_invoke));
       buffer.put(Number(char_class.is_grouping));
       buffer.putInt(char_class.max_length);
@@ -119,5 +113,3 @@ class InvokeDefinitionMap {
     return buffer.buffer;
   }
 }
-
-export default InvokeDefinitionMap;

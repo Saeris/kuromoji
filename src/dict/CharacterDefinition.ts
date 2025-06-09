@@ -14,16 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { InvokeDefinitionMap } from "./InvokeDefinitionMap.js";
+import { CharacterClass } from "./CharacterClass.js";
+import { SurrogateAwareString } from "../util/SurrogateAwareString.js";
+import type { CategoryMapping } from "../types.js";
 
-"use strict";
+const DEFAULT_CATEGORY = `DEFAULT`;
 
-import InvokeDefinitionMap from "./InvokeDefinitionMap.js";
-import CharacterClass from "./CharacterClass.js";
-import SurrogateAwareString from "../util/SurrogateAwareString.js";
-
-const DEFAULT_CATEGORY = "DEFAULT";
-
-class CharacterDefinition {
+export class CharacterDefinition {
   character_category_map: Uint8Array;
   compatible_category_map: Uint32Array;
   invoke_definition_map: null | InvokeDefinitionMap;
@@ -51,7 +49,7 @@ class CharacterDefinition {
     compat_cat_map_buffer: Uint32Array,
     invoke_def_buffer: Uint8Array
   ): CharacterDefinition {
-    var char_def = new CharacterDefinition();
+    let char_def = new CharacterDefinition();
     char_def.character_category_map = cat_map_buffer;
     char_def.compatible_category_map = compat_cat_map_buffer;
     char_def.invoke_definition_map =
@@ -63,24 +61,24 @@ class CharacterDefinition {
     class_id: number,
     parsed_category_def: string[]
   ): CharacterClass | null {
-    var category = parsed_category_def[1];
-    var invoke = parseInt(parsed_category_def[2]);
-    var grouping = parseInt(parsed_category_def[3]);
-    var max_length = parseInt(parsed_category_def[4]);
+    let category = parsed_category_def[1];
+    let invoke = parseInt(parsed_category_def[2]);
+    let grouping = parseInt(parsed_category_def[3]);
+    let max_length = parseInt(parsed_category_def[4]);
     if (!isFinite(invoke) || (invoke !== 0 && invoke !== 1)) {
-      console.log("char.def parse error. INVOKE is 0 or 1 in:" + invoke);
+      console.log(`char.def parse error. INVOKE is 0 or 1 in:` + invoke);
       return null;
     }
     if (!isFinite(grouping) || (grouping !== 0 && grouping !== 1)) {
-      console.log("char.def parse error. GROUP is 0 or 1 in:" + grouping);
+      console.log(`char.def parse error. GROUP is 0 or 1 in:` + grouping);
       return null;
     }
     if (!isFinite(max_length) || max_length < 0) {
-      console.log("char.def parse error. LENGTH is 1 to n:" + max_length);
+      console.log(`char.def parse error. LENGTH is 1 to n:` + max_length);
       return null;
     }
-    var is_invoke = invoke === 1;
-    var is_grouping = grouping === 1;
+    let is_invoke = invoke === 1;
+    let is_grouping = grouping === 1;
 
     return new CharacterClass(
       class_id,
@@ -93,44 +91,44 @@ class CharacterDefinition {
 
   static parseCategoryMapping(
     parsed_category_mapping: string[]
-  ): Omit<CategoryMapping, "end"> {
-    var start = parseInt(parsed_category_mapping[1]);
-    var default_category = parsed_category_mapping[2];
-    var compatible_category =
+  ): Omit<CategoryMapping, `end`> {
+    let start = parseInt(parsed_category_mapping[1]);
+    let default_category = parsed_category_mapping[2];
+    let compatible_category =
       3 < parsed_category_mapping.length
         ? parsed_category_mapping.slice(3)
         : [];
     if (!isFinite(start) || start < 0 || start > 0xffff) {
-      console.log("char.def parse error. CODE is invalid:" + start);
+      console.log(`char.def parse error. CODE is invalid:` + start);
     }
     return {
       start: start,
       default: default_category,
-      compatible: compatible_category,
+      compatible: compatible_category
     };
   }
 
   static parseRangeCategoryMapping(
     parsed_category_mapping: string[]
   ): CategoryMapping {
-    var start = parseInt(parsed_category_mapping[1]);
-    var end = parseInt(parsed_category_mapping[2]);
-    var default_category = parsed_category_mapping[3];
-    var compatible_category =
+    let start = parseInt(parsed_category_mapping[1]);
+    let end = parseInt(parsed_category_mapping[2]);
+    let default_category = parsed_category_mapping[3];
+    let compatible_category =
       4 < parsed_category_mapping.length
         ? parsed_category_mapping.slice(4)
         : [];
     if (!isFinite(start) || start < 0 || start > 0xffff) {
-      console.log("char.def parse error. CODE is invalid:" + start);
+      console.log(`char.def parse error. CODE is invalid:` + start);
     }
     if (!isFinite(end) || end < 0 || end > 0xffff) {
-      console.log("char.def parse error. CODE is invalid:" + end);
+      console.log(`char.def parse error. CODE is invalid:` + end);
     }
     return {
       start: start,
       end: end,
       default: default_category,
-      compatible: compatible_category,
+      compatible: compatible_category
     };
   }
 
@@ -138,30 +136,25 @@ class CharacterDefinition {
    * Initializing method
    * @param {Array} category_mapping Array of category mapping
    */
-  initCategoryMappings(category_mapping?: CategoryMapping[]) {
+  initCategoryMappings(category_mapping?: CategoryMapping[]): void {
     // Initialize map by DEFAULT class
-    var code_point;
+    let code_point;
     if (category_mapping != null) {
-      for (var i = 0; i < category_mapping.length; i++) {
-        var mapping = category_mapping[i];
-        var end = mapping.end ?? mapping.start;
+      for (const mapping of category_mapping) {
+        let end = mapping.end ?? mapping.start;
         for (code_point = mapping.start; code_point <= end; code_point++) {
           // Default Category class ID
           this.character_category_map[code_point] =
             this.invoke_definition_map?.lookup(mapping.default) ?? 0;
 
-          for (var j = 0; j < mapping.compatible.length; j++) {
-            var bitset = this.compatible_category_map[code_point];
-            var compatible_category = mapping.compatible[j];
-            if (compatible_category == null) {
-              continue;
-            }
-            var class_id =
+          for (const compatible_category of mapping.compatible) {
+            let bitset = this.compatible_category_map[code_point];
+            let class_id =
               this.invoke_definition_map?.lookup(compatible_category); // Default Category
             if (class_id == null) {
               continue;
             }
-            var class_id_bit = 1 << class_id;
+            let class_id_bit = 1 << class_id;
             bitset = bitset | class_id_bit; // Set a bit of class ID 例えば、class_idが3のとき、3ビット目に1を立てる
             this.compatible_category_map[code_point] = bitset;
           }
@@ -192,12 +185,6 @@ class CharacterDefinition {
    */
   lookupCompatibleCategory(ch: string): CharacterClass[] {
     var classes: CharacterClass[] = [];
-
-    /*
-     if (SurrogateAwareString.isSurrogatePair(ch)) {
-     // Surrogate pair character codes can not be defined by char.def
-     return classes;
-     }*/
     var code = ch.charCodeAt(0);
     var integer;
     if (code < this.compatible_category_map.length) {
@@ -239,14 +226,10 @@ class CharacterDefinition {
       class_id = this.character_category_map[code]; // Read as integer value
     }
 
-    if (class_id == null) {
-      class_id = this.invoke_definition_map.lookup(DEFAULT_CATEGORY);
-    }
+    class_id ??= this.invoke_definition_map.lookup(DEFAULT_CATEGORY);
 
     if (class_id === null) return;
 
     return this.invoke_definition_map.getCharacterClass(class_id);
   }
 }
-
-export default CharacterDefinition;

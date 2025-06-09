@@ -14,12 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ViterbiNode } from "./ViterbiNode.js";
 
-"use strict";
-
-import ViterbiNode from "./ViterbiNode.js";
-
-class ViterbiLattice {
+export class ViterbiLattice {
   nodes_end_at: ViterbiNode[][];
   eos_pos: number;
 
@@ -29,7 +26,7 @@ class ViterbiLattice {
    */
   constructor() {
     this.nodes_end_at = [];
-    this.nodes_end_at[0] = [new ViterbiNode(-1, 0, 0, 0, "BOS", 0, 0, "")];
+    this.nodes_end_at[0] = [new ViterbiNode(-1, 0, 0, 0, `BOS`, 0, 0, ``)];
     this.eos_pos = 1;
   }
 
@@ -37,16 +34,13 @@ class ViterbiLattice {
    * Append node to ViterbiLattice
    * @param {ViterbiNode} node
    */
-  append(node: ViterbiNode) {
-    var last_pos = node.start_pos + node.length - 1;
+  append(node: ViterbiNode): void {
+    const last_pos = node.start_pos + node.length - 1;
     if (this.eos_pos < last_pos) {
       this.eos_pos = last_pos;
     }
 
-    var prev_nodes = this.nodes_end_at[last_pos];
-    if (prev_nodes == null) {
-      prev_nodes = [];
-    }
+    const prev_nodes = this.nodes_end_at[last_pos] ?? [];
     prev_nodes.push(node);
 
     this.nodes_end_at[last_pos] = prev_nodes;
@@ -55,13 +49,11 @@ class ViterbiLattice {
   /**
    * Set ends with EOS (End of Statement)
    */
-  appendEos() {
-    var last_index = this.nodes_end_at.length;
+  appendEos(): void {
+    const last_index = this.nodes_end_at.length;
     this.eos_pos++;
     this.nodes_end_at[last_index] = [
-      new ViterbiNode(-1, 0, this.eos_pos, 0, "EOS", 0, 0, ""),
+      new ViterbiNode(-1, 0, this.eos_pos, 0, `EOS`, 0, 0, ``)
     ];
   }
 }
-
-export default ViterbiLattice;
