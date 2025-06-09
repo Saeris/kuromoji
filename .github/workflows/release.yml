@@ -11,7 +11,7 @@ permissions: {}
 
 jobs:
   release:
-    if: github.repository == 'saeris/eslint-config'
+    if: github.repository == 'saeris/kuromoji'
     permissions:
       contents: write
       pull-requests: write
