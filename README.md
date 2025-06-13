@@ -1,6 +1,6 @@
 # kuromoji.ts
 
-This is a separately maintained fork of [kuromoji.ts](https://mijinkosd.github.io/kuromoji.ts/index.html).
+This is a separately maintained fork of [kuromoji.ts](https://github.com/MijinkoSD/kuromoji.ts).
 
 ## API
 
